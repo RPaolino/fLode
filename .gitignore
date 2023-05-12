@@ -1,0 +1,6 @@
+data
+.vscode
+*cache*
+.tmp
+imgs
+test
