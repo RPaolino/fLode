@@ -21,7 +21,7 @@ def build_dataset(dataset_name, transform, verbose=False):
     '''
     if dataset_name in ["Cora", "Citeseer", "Pubmed"]:
         dataset = Planetoid(root='data', split="geom-gcn", name=dataset_name, transform=transform)
-    elif dataset_name == "Actor":
+    elif dataset_name == "film":
         dataset =  Actor(root='data', transform=transform)
     elif dataset_name in ["chameleon", "squirrel", "crocodile"]:
         dataset =  WikipediaNetwork(root='data', name=dataset_name, transform=transform)

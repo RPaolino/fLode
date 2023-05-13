@@ -31,20 +31,28 @@ def build_transform(normalize_features, norm_ord, norm_dim, undirected, self_loo
 class CustomNormalizeFeatures(T.BaseTransform):
     r"""
     Normalizes the features w.r.t. the specified dim and the specified p-norm.
+    If you want the default NormalizeFeatures from torch_geometric.transform,
+    put ord="sum" and dim=-1.
     Args:
-        all args that the function torch.linalg.norm accepts.
+        ord: p-norm that is computed.
+        dim: along which dimension to compute the p-norm
     """
-    def __init__(self, **norm_kwargs):
+    def __init__(self, ord, dim):
         super().__init__()
-        self.norm_kwargs = norm_kwargs
+        self.ord=ord
+        self.dim=dim
 
     def __call__(self, data):
-        norm = torch.linalg.norm(data.x, **self.norm_kwargs, keepdim=True).clamp_(min=1.)
-        data.x.div_(norm)
+        if self.ord=="sum":
+            data.x = data.x - data.x.min()
+            data.x.div_(data.x.sum(dim=self.dim, keepdim=True).clamp_(min=1.))
+        else:
+            norm = torch.linalg.norm(data.x, ord=self.ord, dim=self.dim, keepdim=True).clamp_(min=1.)
+            data.x.div_(norm)
         return data
     
     def __repr__(self) -> str:
-        return f'{self.__class__.__name__}(ord={self.norm_kwargs["ord"]}, dim={self.norm_kwargs["dim"]})'
+        return f'{self.__class__.__name__}(ord={self.ord}, dim={self.dim})'
 
 @functional_transform('custom_self_loops')
 class CustomSelfLoops(T.BaseTransform):

@@ -13,7 +13,7 @@ best_hyperparams = {
         "lr":0.0001,
         "weight_decay":0.0005, 
         "normalize_features": True,
-        "norm_ord": "inf",
+        "norm_ord": float('inf'),
         "norm_dim":1, 
         "lcc": True
     },
@@ -50,7 +50,7 @@ best_hyperparams = {
         "lr":0.01,
         "weight_decay":0.001,
         "normalize_features": True,
-        "norm_ord":"inf", 
+        "norm_ord":float('inf'), 
         "norm_dim":1,
         "lcc": True
     },
@@ -130,7 +130,7 @@ best_hyperparams = {
             "lcc": True
         },
     },
-    'Actor': {
+    'film': {
         'directed': {
             "num_layers":1,
             "input_dropout":0,
@@ -156,7 +156,7 @@ best_hyperparams = {
             "encoder_layers":2,
             "decoder_dropout":0.1,
             "hidden_channels":256,
-            "sparsity":0,
+            "sparsity":0.,
             "self_loops":0.,
             "undirected":True,
             "patience":100,

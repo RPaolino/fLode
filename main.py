@@ -10,10 +10,7 @@ import tqdm
 import argparse
 
 from sklearnex import patch_sklearn
-patch_sklearn()
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(f'device: {colortext(device, "c")}.')
 
 def training_step(model, optimizer, criterion, data, train_mask):
   model.train()
@@ -35,9 +32,9 @@ def evaluate(model, criterion, data, train_mask, val_mask, test_mask):
                           "imag": {}}
   }
   out, dirichlet_energy = model(data)
-  metrics["dirichlet_energy"]["real"] = dirichlet_energy.real
+  metrics["dirichlet_energy"]["real"] = dirichlet_energy[-1].real
   if type(dirichlet_energy)==torch.cfloat:
-    metrics["dirichlet_energy"]["imag"] = dirichlet_energy.imag  
+    metrics["dirichlet_energy"]["imag"] = dirichlet_energy[-1].imag  
   pred_class = out.argmax(dim=1)  # Use the class with highest probability.
   for split, mask in zip(["train", "val", "test"], [train_mask, val_mask, test_mask]):
     metrics["loss"][split] = criterion(out[mask], data.y[mask]).item()
@@ -47,6 +44,9 @@ def evaluate(model, criterion, data, train_mask, val_mask, test_mask):
 
 
 def main(options):
+  patch_sklearn()
+  device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+  print(f'device: {colortext(device, "c")}.')
   seed_all()
   transform = build_transform(
     normalize_features=options["normalize_features"],
@@ -77,6 +77,8 @@ def main(options):
     "epoch": np.zeros(num_splits),
     "exponent": np.zeros(num_splits),
     "step_size": np.zeros(num_splits),
+    "dirichlet_energy.real": np.zeros(num_splits),
+    "dirichlet_energy.imag": np.zeros(num_splits)
   }
   
   # Training
@@ -161,31 +163,30 @@ def main(options):
     
     
 if __name__=="__main__":
-    
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description='fLode: fractional Laplacian graph neural ode')
     parser.add_argument('-v', '--verbose', dest="verbose", action='store_true', help='Flag to print useful information.')
     parser.add_argument('-b', '--best', dest="best", action='store_true', help='Flag to use the hyperparams from "lib.best".')
     #Dataset
-    parser.add_argument('--dataset', default='chameleon', type=str, help='Which dataset to use.') 
+    parser.add_argument('--dataset', dest="dataset", default='chameleon', type=str, help='Which dataset to use (default chameleon).') 
     # Transforms
     parser.add_argument('-n', '--normalize_features', dest="normalize_features", action='store_true', help='Normalizes features.')
-    parser.add_argument('--norm_ord', default=2, help='p-norm w.r.t. which normalize the features.') 
-    parser.add_argument('--norm_dim', type=int, default=0, help='Dimension w.r.t. which normalize the features.') 
+    parser.add_argument('--norm_ord', default=2, help='p-norm w.r.t. which normalize the features (default 2). Check torch.linalg.norm for the possible values. Note that we allow norm_ord="sum" to retrieve the behaviour of NormalizeFeatures() from torch_geometric.transforms.NormalizeFeatures().') 
+    parser.add_argument('--norm_dim', type=int, default=0, help='Dimension w.r.t. which normalize the features (default 0).') 
     parser.add_argument('-u', '--undirected', dest="undirected", action='store_true', help='Make the graph undirected.')
-    parser.add_argument('--self_loops', type=float, default=0., help='Value for the self loops.')
+    parser.add_argument('--self_loops', type=float, default=0., help='Value for the self loops (default 0.0).')
     parser.add_argument('-l', '--lcc', dest="lcc", action='store_true', help='Consider only the largest connected component.') 
-    parser.add_argument('--sparsity', default=0.0, help='(1-sparsity)*num_nodes singular values will be considered.') 
-    parser.add_argument('--sklearn', dest="sklearn", action='store_true', help='Use the scikit-learn-intelex.extmath library to compute the svd.') 
+    parser.add_argument('--sparsity', default=0.0, help='(1-sparsity)*num_nodes singular values will be computed and stored.') 
+    parser.add_argument('--sklearn', dest="sklearn", action='store_true', help='Use the scikit-learn-intelex.extmath library to compute the svd. Useful when the graph is too large, i.e., when the torch.linalg.svd() would cause an out-of-memory error.') 
     # Model
     parser.add_argument('--hidden_channels', type=int, default=64, help='Number of hidden channels (default 64).') 
     parser.add_argument('--num_layers', type=int, default=3, help='Number of layers (default 3).') 
-    parser.add_argument('--exponent', default="learnable", help='Which exponent to use (float or "learnable", default "learnable").') 
-    parser.add_argument('--spectral_shift', default=0.0, help='Which spectral_shift to use (float or "learnable", default 0.0).') 
-    parser.add_argument('--step_size', default="learnable", help='Which step_size to use (float or "learnable", default "learnable").') 
-    parser.add_argument('--channel_mixing', type=str, default="d", help='Which parametrization of channel_mixing to use (defaul "d"): "d" for diagonal, "s" for symmetric, "f" for full.') 
-    parser.add_argument('--init', type=str, default="normal", help='Which initialization to use for channel_mixing (default "normal"). Check the ones implemented in torch.nn.init.') 
-    parser.add_argument('--dtype', type=str, default="cfloat", help='(default "cfloat")"float" for real neural network, "cfloat" for complex neural network.') 
-    parser.add_argument('--equation', type=str, default="-s", help='(default "-s") "h" for heat eq., "-h" for minus heat eq., "s" for Schroedinger eq., "-s" "s" for minus Schroedinger eq.') 
+    parser.add_argument('--exponent', default="learnable", help='Value of \alpha (float or "learnable", default "learnable").') 
+    parser.add_argument('--spectral_shift', default=0.0, help='Value of spectral_shift (float or "learnable", default 0.0).') 
+    parser.add_argument('--step_size', default="learnable", help='Value of step_size (float or "learnable", default "learnable").') 
+    parser.add_argument('--channel_mixing', type=str, default="d", help='Which parametrization of channel_mixing to use: "d" for diagonal, "s" for symmetric, "f" for full. (defaul "d")') 
+    parser.add_argument('--init', type=str, default="normal", help='Which initialization to use for channel_mixing. Check the ones implemented in torch.nn.init. (default "normal")') 
+    parser.add_argument('--dtype', type=str, default="cfloat", help='Real or complex neural network: "float" for real, "cfloat" for complex. (default "cfloat")') 
+    parser.add_argument('--equation', type=str, default="-s", help='Equation to solve: "h" for heat eq., "-h" for minus heat eq., "s" for Schroedinger eq., "-s" "s" for minus Schroedinger eq. (default "-s")') 
     parser.add_argument('--encoder_layers', type=int, default=1, help='Number of encoding layers before the neural ODE (default 1).') 
     parser.add_argument('--decoder_layers', type=int, default=1, help='Number of decoding layers after the neural ODE (default 1).') 
     parser.add_argument('--input_dropout', type=float, default=0.0, help='Dropout of the first encoding layer (default 0.).') 
@@ -196,9 +197,9 @@ if __name__=="__main__":
     parser.add_argument('--weight_decay', type=float, default=5e-4, help='Weight decay (default 5e-4).')
     # Training
     parser.add_argument('--num_epochs', type=int, default=1000, help='Maximal number of epochs (default 1000).')
-    parser.add_argument('--patience', type=int, default=200, help='Patience for early stopping (default 200): stops after "patience" consecutive epochs in which the validation accuracy did not increase.')
+    parser.add_argument('--patience', type=int, default=200, help='Patience for early stopping: stops after "patience" consecutive epochs in which the validation accuracy did not increase. (default 200)')
     # Num split
-    parser.add_argument('--num_split', default=range(10), help='Which split to consider (default range(10))')
+    parser.add_argument('--num_split', default=range(10), help='Which splits to consider (default range(10))')
 
     options = vars(parser.parse_args())
     
