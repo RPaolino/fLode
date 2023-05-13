@@ -1,4 +1,3 @@
-import lib.integrate
 import numpy as np
 import torch
 import torch.nn.init as I
@@ -68,9 +67,6 @@ class fLode(torch.nn.Module):
           self.iu = torch.complex(torch.zeros(1, device=device), torch.ones(1, device=device))
         elif self.eq=="-s":
           self.iu = torch.complex(torch.zeros(1, device=device), -torch.ones(1, device=device))
-        self.method=method
-        self.butcher_tableau = getattr(lib.integrate, self.method)
-        self.adaptive=adaptive
         
         if exponent=="learnable":
           self.exponent = torch.nn.Parameter(
