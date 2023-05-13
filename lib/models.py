@@ -30,7 +30,7 @@ class Dropout(torch.nn.Module):
     return x 
 
     
-class FGNODE(torch.nn.Module):
+class fLode(torch.nn.Module):
     r'''
     Create a Fractional Laplacian Graph Neural ODE.
     '''
@@ -44,8 +44,6 @@ class FGNODE(torch.nn.Module):
       eq: str="-h",
       spectral_shift="learnable", 
       exponent="learnable", 
-      method: str="heun_euler", 
-      adaptive: bool=False,
       step_size="learnable", 
       channel_mixing="f", 
       input_dropout: float=0, 
@@ -185,13 +183,11 @@ class FGNODE(torch.nn.Module):
       new_S = (self.spectral_shift+data.S).unsqueeze(dim=1).pow(self.exponent).to(self.dtype)  
       return data.U.to(self.dtype) @ ((new_S * (data.Vh.to(self.dtype) @ x.to(self.dtype))) @ self.parametrize_channel_mixing())
      
-    def integration_step(self, data, previous_x): 
-      LxW = self.LxW(data=data, x=previous_x).unsqueeze(dim=2)
-      K = self.iu*LxW
-      for i in range(1, len(self.butcher_tableau["b"])):
-        ki = self.iu*(LxW+self.step_size*torch.cat([self.butcher_tableau["A"][i, k]*self.LxW(data=data, x=K[:, :, k]).unsqueeze(dim=2) for k in range(i)], dim=2).sum(dim=2, keepdim=True))
-        K = torch.cat([K, ki], dim=2)
-      current_x = previous_x + self.step_size * torch.cat([b * K[:, :, i].unsqueeze(dim=2) for i, b in enumerate(self.butcher_tableau["b"])], dim=2).sum(dim=2)
+    def forward_euler_step(self, data, previous_x): 
+      r'''
+      Compute the forward euler step x'(t) \approx (x(t+h)-x(t))/h.
+      '''
+      current_x = previous_x + self.iu * self.step_size * self.LxW(data=data, x=previous_x)
       return current_x
 
     def dirichlet_energy(self, data, x): 
@@ -214,7 +210,7 @@ class FGNODE(torch.nn.Module):
         energy[0]=self.dirichlet_energy(data=data, x=x)
         
         for nl in np.arange(1, self.num_layers+1):
-          x = self.integration_step(data=data, previous_x=x)
+          x = self.forward_euler_step(data=data, previous_x=x)
           energy[nl] = self.dirichlet_energy(data=data, x=x)
           
         x = self.dropout[1](x)

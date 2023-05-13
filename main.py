@@ -19,7 +19,7 @@ def training_step(model, optimizer, criterion, data, train_mask):
   model.train()
   optimizer.zero_grad()  
   out, dirichlet_energy = model(data)  # Perform a single forward pass.
-  out = out-out.max(dim=1)[0].unsqueeze(dim=1)
+  #out = out-out.max(dim=1)[0].unsqueeze(dim=1)
   loss = criterion(out[train_mask], data.y[train_mask]) 
   loss.backward()   
   optimizer.step()  
@@ -41,7 +41,7 @@ def evaluate(model, criterion, data, train_mask, val_mask, test_mask):
   pred_class = out.argmax(dim=1)  # Use the class with highest probability.
   for split, mask in zip(["train", "val", "test"], [train_mask, val_mask, test_mask]):
     metrics["loss"][split] = criterion(out[mask], data.y[mask]).item()
-    correct = pred_class[mask] == data.y[mask]  # Check against ground-truth labels.
+    correct = (pred_class[mask] == data.y[mask])  # Check against ground-truth labels.
     metrics["acc"][split] = int(correct.sum()) / int(mask.sum()) # Derive ratio of correct predictions.
   return metrics
 
@@ -53,7 +53,7 @@ def main(options):
     norm_ord=options["norm_ord"], 
     norm_dim=options["norm_dim"],
     undirected=options["undirected"],
-    add_self_loops=options["add_self_loops"],
+    self_loops=options["self_loops"],
     lcc=options["lcc"],
     sparsity=options["sparsity"],
     sklearn=options["sklearn"],
@@ -81,12 +81,11 @@ def main(options):
   
   # Training
   for n, nsplit in enumerate(options["num_split"]):
-    model = FGNODE(
+    model = fLode(
       in_channels=dataset.num_features,
       out_channels=dataset.num_classes,
       hidden_channels=options["hidden_channels"], 
       num_layers=options["num_layers"], 
-      method=options["method"], 
       exponent=options["exponent"], 
       spectral_shift=options["spectral_shift"], 
       step_size=options["step_size"], 
@@ -96,7 +95,6 @@ def main(options):
       init=options["init"], 
       dtype=options["dtype"], 
       eq=options["equation"],
-      adaptive=options["adaptive"],
       encoder_layers=options["encoder_layers"],
       decoder_layers=options["decoder_layers"]
     ).to(device)
@@ -174,23 +172,20 @@ if __name__=="__main__":
     parser.add_argument('--norm_ord', default=2, help='p-norm w.r.t. which normalize the features.') 
     parser.add_argument('--norm_dim', type=int, default=0, help='Dimension w.r.t. which normalize the features.') 
     parser.add_argument('-u', '--undirected', dest="undirected", action='store_true', help='Make the graph undirected.')
-    parser.add_argument('-s', '--add_self_loops', dest="add_self_loops", action='store_true', help='Add self loops.')
+    parser.add_argument('--self_loops', type=float, default=0., help='Value for the self loops.')
     parser.add_argument('-l', '--lcc', dest="lcc", action='store_true', help='Consider only the largest connected component.') 
     parser.add_argument('--sparsity', default=0.0, help='(1-sparsity)*num_nodes singular values will be considered.') 
     parser.add_argument('--sklearn', dest="sklearn", action='store_true', help='Use the scikit-learn-intelex.extmath library to compute the svd.') 
-
     # Model
     parser.add_argument('--hidden_channels', type=int, default=64, help='Number of hidden channels (default 64).') 
     parser.add_argument('--num_layers', type=int, default=3, help='Number of layers (default 3).') 
-    parser.add_argument('--method', type=str, default="forward_euler", help='Method of integration (defaul "forward_euler"). Check the ones implemented in lib.integrate.')
     parser.add_argument('--exponent', default="learnable", help='Which exponent to use (float or "learnable", default "learnable").') 
-    parser.add_argument('--spectral_shift', default=1e-16, help='Which spectral_shift to use (float or "learnable", default 1e-16).') 
+    parser.add_argument('--spectral_shift', default=0.0, help='Which spectral_shift to use (float or "learnable", default 0.0).') 
     parser.add_argument('--step_size', default="learnable", help='Which step_size to use (float or "learnable", default "learnable").') 
     parser.add_argument('--channel_mixing', type=str, default="d", help='Which parametrization of channel_mixing to use (defaul "d"): "d" for diagonal, "s" for symmetric, "f" for full.') 
     parser.add_argument('--init', type=str, default="normal", help='Which initialization to use for channel_mixing (default "normal"). Check the ones implemented in torch.nn.init.') 
     parser.add_argument('--dtype', type=str, default="cfloat", help='(default "cfloat")"float" for real neural network, "cfloat" for complex neural network.') 
     parser.add_argument('--equation', type=str, default="-s", help='(default "-s") "h" for heat eq., "-h" for minus heat eq., "s" for Schroedinger eq., "-s" "s" for minus Schroedinger eq.') 
-    parser.add_argument('--adaptive', dest="adaptive", action='store_true', help='Implement adaptive step size.') 
     parser.add_argument('--encoder_layers', type=int, default=1, help='Number of encoding layers before the neural ODE (default 1).') 
     parser.add_argument('--decoder_layers', type=int, default=1, help='Number of decoding layers after the neural ODE (default 1).') 
     parser.add_argument('--input_dropout', type=float, default=0.0, help='Dropout of the first encoding layer (default 0.).') 
@@ -217,4 +212,9 @@ if __name__=="__main__":
         **best_hyperparams
       }
     
+    print(f'Options')
+    if options["verbose"]:
+      for k in sorted(options.keys()):
+        print(f'| {k}: {options[k]}')
+        
     main(options)

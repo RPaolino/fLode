@@ -6,14 +6,16 @@ best_hyperparams = {
         "encoder_layers":1,
         "decoder_dropout":0.4,
         "hidden_channels":64, 
-        "sparsity":0,
-        "add_self_loops":True,
+        "sparsity":0.,
+        "self_loops":1.,
         "undirected":True, 
         "patience":200,
         "lr":0.0001,
         "weight_decay":0.0005, 
+        "normalize_features": True,
         "norm_ord": "inf",
         "norm_dim":1, 
+        "lcc": True
     },
     'Citeseer': {
         "num_layers":2,
@@ -22,14 +24,16 @@ best_hyperparams = {
         "encoder_layers":1,
         "decoder_dropout":0,
         "hidden_channels":64, 
-        "sparsity":0,
-        "add_self_loops":True,
+        "sparsity":0.,
+        "self_loops":1.,
         "undirected":True, 
         "patience":100,
         "lr":0.001,
         "weight_decay":0.0005,
+        "normalize_features": True,
         "norm_ord":"sum",
-        "norm_dim":1
+        "norm_dim":1,
+        "lcc": True
     },
     'Pubmed': {
         "num_layers":3,
@@ -40,13 +44,15 @@ best_hyperparams = {
         "hidden_channels":32, 
         "sparsity":0.5,
         "sklearn": True,
-        "add_self_loops":True,
+        "self_loops":1.,
         "undirected":True, 
         "patience":100,
         "lr":0.01,
         "weight_decay":0.001,
+        "normalize_features": True,
         "norm_ord":"inf", 
-        "norm_dim":1
+        "norm_dim":1,
+        "lcc": True
     },
     'chameleon':{
         'directed': {
@@ -56,14 +62,16 @@ best_hyperparams = {
             "encoder_layers":1,
             "decoder_dropout":0,
             "hidden_channels":64, 
-            "sparsity":0.5,
-            "add_self_loops":False,
+            "sparsity":0.,
+            "self_loops":0.,
             "undirected":False, 
             "patience":100,
             "lr":0.005,
             "weight_decay":0.001,
+            "normalize_features": True,
             "norm_ord":2,
-            "norm_dim":0
+            "norm_dim":0,
+            "lcc": True
         },
         'undirected': {
             "num_layers":4,
@@ -72,14 +80,16 @@ best_hyperparams = {
             "encoder_layers":2,
             "decoder_dropout":0,
             "hidden_channels":64,
-            "sparsity":0.5,
-            "add_self_loops":False,
+            "sparsity":0.,
+            "self_loops":0.,
             "undirected":True,
             "patience":100,
             "lr":0.005,
             "weight_decay":0.001,
+            "normalize_features": True,
             "norm_ord":2,
-            "norm_p":0
+            "norm_p":0,
+            "lcc": True
         }
     },
     'squirrel':{
@@ -91,13 +101,15 @@ best_hyperparams = {
             "decoder_dropout":0.1,
             "hidden_channels":64, 
             "sparsity":0.5,
-            "add_self_loops":False,
+            "self_loops":0.,
             "undirected":False,
             "patience":100,
             "lr":0.0025,
             "weight_decay":0.0005,
+            "normalize_features": True,
             "norm_ord":2,
-            "norm_dim":0
+            "norm_dim":0,
+            "lcc": True
         },
         'undirected':{
             "num_layers":6,
@@ -107,13 +119,15 @@ best_hyperparams = {
             "decoder_dropout":0.1,
             "hidden_channels":64,
             "sparsity":0.5,
-            "add_self_loops":False,
+            "self_loops":0.,
             "undirected":True,
             "patience":100,
             "lr":0.0025,
             "weight_decay":0.0005,
+            "normalize_features": True,
             "norm_ord":2,
-            "norm_p":0
+            "norm_p":0,
+            "lcc": True
         },
     },
     'Actor': {
@@ -125,13 +139,15 @@ best_hyperparams = {
             "decoder_dropout":0.1,
             "hidden_channels":256,
             "sparsity":0.7,
-            "add_self_loops":False,
+            "self_loops":0.,
             "undirected":False,
             "patience":100,
             "lr":0.00125,
             "weight_decay":0.00075,
+            "normalize_features": True,
             "norm_ord":"sum",
-            "norm_p":1
+            "norm_p":1,
+            "lcc": True
         },
         'undirected': {
             "num_layers":1,
@@ -141,13 +157,15 @@ best_hyperparams = {
             "decoder_dropout":0.1,
             "hidden_channels":256,
             "sparsity":0,
-            "add_self_loops":False,
+            "self_loops":0.,
             "undirected":True,
             "patience":100,
             "lr":0.00125,
             "weight_decay":0.00075,
+            "normalize_features": True,
             "norm_ord":"sum",
-            "norm_p":1
+            "norm_p":1,
+            "lcc": True
         }
     }
 }

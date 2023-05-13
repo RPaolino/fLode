@@ -11,14 +11,13 @@ from sklearnex import patch_sklearn
 patch_sklearn()
 from sklearn.utils.extmath import randomized_svd
 
-def build_transform(normalize_features, norm_ord, norm_dim, undirected, add_self_loops, lcc, sparsity, sklearn, verbose=False):
+def build_transform(normalize_features, norm_ord, norm_dim, undirected, self_loops, lcc, sparsity, sklearn, verbose=False):
     transform_list=[]
     if normalize_features:
         transform_list += [CustomNormalizeFeatures(ord=norm_ord, dim=norm_dim)] 
+    transform_list += [CustomSelfLoops(value=self_loops)]
     if undirected:
         transform_list += [T.ToUndirected()]
-    if add_self_loops:
-        transform_list += [T.AddSelfLoops()]
     if lcc:
         transform_list += [T.LargestConnectedComponents(num_components=1, connection='weak')]
     transform_list += [SNA(sparsity=sparsity, sklearn=sklearn), SNL()]
@@ -46,6 +45,29 @@ class CustomNormalizeFeatures(T.BaseTransform):
     
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}(ord={self.norm_kwargs["ord"]}, dim={self.norm_kwargs["dim"]})'
+
+@functional_transform('custom_self_loops')
+class CustomSelfLoops(T.BaseTransform):
+    r"""
+    Compute the symmetrically normalized Laplacian. Useful to compute the Dirichlet energy.
+    """
+    def __init__(self, value):
+        self.value=value
+        
+    def __call__(self, data):
+        if "edge_weight" not in data:
+            edge_weight = torch.ones(data.edge_index.shape[1])
+        else:
+            edge_weight = data.edge_weight
+        # self_loops = (data.edge_index[0]==data.edge_index[1])
+        # edge_weight[self_loops] = self.value
+        data.edge_index, data.edge_weight = add_remaining_self_loops(
+            edge_index=data.edge_index, 
+            edge_attr=edge_weight, 
+            fill_value=self.value, 
+            num_nodes=data.num_nodes
+        )
+        return data
 
 @functional_transform('sna')
 class SNA(T.BaseTransform):
@@ -80,7 +102,7 @@ class SNA(T.BaseTransform):
         
         data.sna = torch.sparse_coo_tensor(indices=data.edge_index, values=edge_weight, size=(data.num_nodes, data.num_nodes))    
         
-        n_components=round((1.-self.sparsity)*data.num_nodes)
+        n_components=int(np.ceil((1.-self.sparsity)*data.num_nodes))
         if self.sklearn:
             sp_sna = coo_matrix((edge_weight, data.edge_index), shape=(data.num_nodes, data.num_nodes))
             data.U, data.S, data.Vh = randomized_svd(sp_sna, n_components=n_components)
