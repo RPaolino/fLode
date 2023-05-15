@@ -1,5 +1,6 @@
 from lib.utils import *
 from scipy.sparse import coo_matrix
+import time
 import torch
 from torch_scatter import scatter_sum
 import torch_geometric.transforms as T
@@ -10,6 +11,8 @@ from torch_geometric.data.datapipes import functional_transform
 from sklearnex import patch_sklearn
 patch_sklearn()
 from sklearn.utils.extmath import randomized_svd
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def build_transform(normalize_features, norm_ord, norm_dim, undirected, self_loops, lcc, sparsity, sklearn, verbose=False):
     transform_list=[]
@@ -111,15 +114,17 @@ class SNA(T.BaseTransform):
         data.sna = torch.sparse_coo_tensor(indices=data.edge_index, values=edge_weight, size=(data.num_nodes, data.num_nodes))    
         
         n_components=int(np.ceil((1.-self.sparsity)*data.num_nodes))
+        initial_time = time.time()
         if self.sklearn:
             sp_sna = coo_matrix((edge_weight, data.edge_index), shape=(data.num_nodes, data.num_nodes))
-            data.U, data.S, data.Vh = randomized_svd(sp_sna, n_components=n_components)
+            U, S, Vh = randomized_svd(sp_sna, n_components=n_components)
+            data.U, data.S, data.Vh = torch.from_numpy(U).to(device), torch.from_numpy(S).to(device), torch.from_numpy(Vh).to(device)
         else:
             data.U, data.S, data.Vh = torch.linalg.svd(data.sna.to_dense())
             data.U = data.U[:, :n_components]
             data.S = data.S[:n_components]
             data.Vh = data.Vh[:n_components, :]
-        
+        print(f'SVD elapsed time: {time.strftime("%H:%M:%S", time.gmtime(time.time()-initial_time))}')
         return data
     
     def __repr__(self) -> str:

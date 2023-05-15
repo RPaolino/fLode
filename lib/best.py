@@ -147,7 +147,8 @@ best_hyperparams = {
             "normalize_features": True,
             "norm_ord":"sum",
             "norm_p":1,
-            "lcc": True
+            "lcc": True,
+            "sklearn":True
         },
         'undirected': {
             "num_layers":1,

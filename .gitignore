@@ -1,5 +1,6 @@
-data
+.data
 .vscode
 *cache*
 .tmp
 test
+.results

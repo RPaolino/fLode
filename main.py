@@ -1,15 +1,21 @@
+import json
 from lib.best import *
 from lib.transforms import *
 from lib.models import *
 from lib.utils import *
 from lib.dataset import *
-import lib.dataset
+import os
+import shutil
 import torch
 
 import tqdm
 import argparse
 
 from sklearnex import patch_sklearn
+
+RESULTS_FOLDER = '.results'
+if not os.path.exists(RESULTS_FOLDER):
+  os.makedirs(RESULTS_FOLDER)
 
 
 def training_step(model, optimizer, criterion, data, train_mask):
@@ -47,7 +53,6 @@ def main(options):
   patch_sklearn()
   device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
   print(f'device: {colortext(device, "c")}.')
-  seed_all()
   transform = build_transform(
     normalize_features=options["normalize_features"],
     norm_ord=options["norm_ord"], 
@@ -83,6 +88,7 @@ def main(options):
   
   # Training
   for n, nsplit in enumerate(options["num_split"]):
+    seed_all()
     model = fLode(
       in_channels=dataset.num_features,
       out_channels=dataset.num_classes,
@@ -95,7 +101,7 @@ def main(options):
       input_dropout=options["input_dropout"], 
       decoder_dropout=options["decoder_dropout"], 
       init=options["init"], 
-      dtype=options["dtype"], 
+      dtype=torch.float if options["real"] else torch.cfloat, 
       eq=options["equation"],
       encoder_layers=options["encoder_layers"],
       decoder_layers=options["decoder_layers"]
@@ -157,10 +163,25 @@ def main(options):
               print(f'| {k}: {best[k][n]}')
               
   print(f'Overall performances (mean, std)')
+  avg_best = best.copy()
   for k in best.keys():
-    print(f'| {k}: ({best[k].mean():.5f}, {best[k].std():.5f})')
-        
-    
+    mean = best[k].mean()
+    std = best[k].std()
+    avg_best[k] = [mean, std]
+    print(f'| {k}: ({mean:.5f}, {std:.5f})')
+  
+  #Saving results
+  filename=f'{RESULTS_FOLDER}/{options["dataset"]}'
+  if options["dataset"] in ["film", "chameleon", "squirrel"]:
+    filename += f'_undirected' if options["undirected"] else f'_directed'
+  with open(filename+f'.json', 'w', encoding='utf-8') as f:
+    json.dump(avg_best, f, ensure_ascii=False, indent=4)
+  
+  #Delete processed file
+  try:
+    shutil.rmtree(f'.data/{options["dataset"]}/geom_gcn/processed')
+  except:
+    shutil.rmtree(f'.data/{options["dataset"]}/geom-gcn/processed')
     
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description='fLode: fractional Laplacian graph neural ode')
@@ -185,7 +206,7 @@ if __name__=="__main__":
     parser.add_argument('--step_size', default="learnable", help='Value of step_size (float or "learnable", default "learnable").') 
     parser.add_argument('--channel_mixing', type=str, default="d", help='Which parametrization of channel_mixing to use: "d" for diagonal, "s" for symmetric, "f" for full. (defaul "d")') 
     parser.add_argument('--init', type=str, default="normal", help='Which initialization to use for channel_mixing. Check the ones implemented in torch.nn.init. (default "normal")') 
-    parser.add_argument('--dtype', type=str, default="cfloat", help='Real or complex neural network: "float" for real, "cfloat" for complex. (default "cfloat")') 
+    parser.add_argument('-r', '--real', dest="real", action='store_true', help='The dtype of learnable parameters will be real.') 
     parser.add_argument('--equation', type=str, default="-s", help='Equation to solve: "h" for heat eq., "-h" for minus heat eq., "s" for Schroedinger eq., "-s" "s" for minus Schroedinger eq. (default "-s")') 
     parser.add_argument('--encoder_layers', type=int, default=1, help='Number of encoding layers before the neural ODE (default 1).') 
     parser.add_argument('--decoder_layers', type=int, default=1, help='Number of decoding layers after the neural ODE (default 1).') 
@@ -204,7 +225,7 @@ if __name__=="__main__":
     options = vars(parser.parse_args())
     
     if options["best"]:
-      best_hyperparams = lib.best.best_hyperparams[options["dataset"]]
+      best_hyperparams = best_hyperparams[options["dataset"]]
       if ("directed" in best_hyperparams.keys()):
         choice = "undirected" if options['undirected'] else "directed"
         best_hyperparams=best_hyperparams[choice]
