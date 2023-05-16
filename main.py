@@ -104,7 +104,8 @@ def main(options):
       dtype=torch.float if options["real"] else torch.cfloat, 
       eq=options["equation"],
       encoder_layers=options["encoder_layers"],
-      decoder_layers=options["decoder_layers"]
+      decoder_layers=options["decoder_layers"],
+      gcn=options["gcn"]
     ).to(device)
     
     if options["verbose"]:
@@ -151,7 +152,7 @@ def main(options):
           else: 
             early_stopping_counter += 1
         
-        description = f'Epoch: {epoch:03d}, early stopping: {early_stopping_counter:3d}, loss.train: {evaluation_metrics["loss.train"]:.4f}'
+        description = f'Accuracy (train, val, test): ({best["acc.train"][n]*100:.2f}%, {best["acc.val"][n]*100:.2f}%, {best["acc.test"][n]*100:.2f}%)'
         progress.set_description(description)
         
         if early_stopping_counter >= options["patience"]:
@@ -221,6 +222,8 @@ if __name__=="__main__":
     parser.add_argument('--patience', type=int, default=200, help='Patience for early stopping: stops after "patience" consecutive epochs in which the validation accuracy did not increase. (default 200)')
     # Num split
     parser.add_argument('--num_split', default=range(10), help='Which splits to consider (default range(10))')
+    #Ablation
+    parser.add_argument('--gcn', dest="gcn", action='store_true', help='The model is converted to a gcn implementing the (possibly) fractional sna.') 
 
     options = vars(parser.parse_args())
     

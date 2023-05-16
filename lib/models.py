@@ -35,7 +35,8 @@ class fLode(torch.nn.Module):
       decoder_dropout: float=0, 
       init: str="normal", 
       encoder_layers: int = 1,
-      decoder_layers: int = 2
+      decoder_layers: int = 2,
+      gcn: bool=False
     ):
         super().__init__()
         
@@ -47,6 +48,7 @@ class fLode(torch.nn.Module):
         self.decoder_layers = decoder_layers
         self.dtype = dtype
         self.eq = eq
+        self.gcn=gcn
         if self.eq=="h":
           self.iu = torch.ones(1, device=device)
         elif self.eq=="-h":
@@ -118,7 +120,6 @@ class fLode(torch.nn.Module):
       Useful to initialize the parameters. The channel_mixing matrix is initialized as specified in "init",
       while the other linear layers as default, i.e., using kaiming_uniform from torch.nn.init.
       '''
-      torch.manual_seed(1000)
       if self.dtype is torch.cfloat:
         getattr(torch.nn.init, self.init)(self.W.real)
         getattr(torch.nn.init, self.init)(self.W.imag)
@@ -163,9 +164,16 @@ class fLode(torch.nn.Module):
      
     def forward_euler_step(self, U, S, Vh, x): 
       r'''
-      Compute the forward euler step x'(t) \approx (x(t+h)-x(t))/h.
+      Compute the forward euler step x[t+1] = x[t] + h \iu L^\alpha x[t] W.
       '''
       x = x + self.iu * self.step_size * self.LxW(U=U, S=S, Vh=Vh, x=x)
+      return x
+
+    def gcn_step(self, U, S, Vh, x):
+      r'''
+      Compute the update step x[t+1] = = \iu L^\alpha x[t] W, i.e., a normal gcn step with the fractional Laplacian
+      '''
+      x = self.iu * self.LxW(U=U, S=S, Vh=Vh, x=x)
       return x
 
     def dirichlet_energy(self, snl, x): 
@@ -197,12 +205,20 @@ class fLode(torch.nn.Module):
       )
       
       for nl in np.arange(1, self.num_layers+1):
-        x = self.forward_euler_step(
-          U=U,
-          S=S,
-          Vh=Vh, 
-          x=x
-        )
+        if self.gcn:
+          x = self.gcn_step(
+            U=U,
+            S=S,
+            Vh=Vh, 
+            x=x
+          )
+        else:
+          x = self.forward_euler_step(
+            U=U,
+            S=S,
+            Vh=Vh, 
+            x=x
+          )
         energy[nl] = self.dirichlet_energy(
           snl=snl,
           x=x
