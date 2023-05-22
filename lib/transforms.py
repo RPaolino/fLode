@@ -88,7 +88,7 @@ class SNA(T.BaseTransform):
         sparsity (float, default 0): how many singular values to consider
         sklearn (bool, default False): if set to True, uses the scikit-learn-intelex ext_math library to compute svd.
     """
-    def __init__(self, sparsity: 0.0, sklearn: bool=False):
+    def __init__(self, sparsity= 0.0, sklearn: bool=False):
         self.sparsity=sparsity
         self.sklearn=sklearn
         
@@ -113,7 +113,10 @@ class SNA(T.BaseTransform):
         
         data.sna = torch.sparse_coo_tensor(indices=data.edge_index, values=edge_weight, size=(data.num_nodes, data.num_nodes))    
         
-        n_components=int(np.ceil((1.-self.sparsity)*data.num_nodes))
+        if type(self.sparsity)==float:
+            n_components=int(np.ceil((1.-self.sparsity)*data.num_nodes))
+        elif type(self.sparsity)==int:
+            n_components=self.sparsity
         initial_time = time.time()
         if self.sklearn:
             sp_sna = coo_matrix((edge_weight, data.edge_index), shape=(data.num_nodes, data.num_nodes))

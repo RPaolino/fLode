@@ -72,3 +72,23 @@ def collapse(dict2collapse={}, collapsed_key="", collapsed_dict={}, verbose=Fals
       else:
         collapsed_dict[collapsed_key+f'.{key}']=value
   return collapsed_dict
+
+def float_or_learnable(value):
+  r'''
+  Useful for parsing variables that are either "learnable" or float.
+  '''
+  if value=="learnable":
+    return value
+  else:
+    return float(value)
+  
+def norm_ord_type(value):
+  r'''
+  Useful for parsing the argument of norm_ord.
+  '''
+  if value in ["fro", "nuc"]:
+    return value
+  elif value in ["inf", "-inf"]:
+    return float(value)
+  else:
+    return int(value)

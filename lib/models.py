@@ -67,7 +67,7 @@ class fLode(torch.nn.Module):
           
         if spectral_shift=="learnable":
           self.spectral_shift = torch.nn.Parameter(
-            torch.ones(1, device=device, dtype=self.dtype)
+            torch.zeros(1, device=device, dtype=self.dtype)
           )
         else:
           self.spectral_shift = torch.tensor(spectral_shift, device=device, dtype=self.dtype)

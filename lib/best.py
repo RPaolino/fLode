@@ -62,7 +62,7 @@ best_hyperparams = {
             "encoder_layers":1,
             "decoder_dropout":0.,
             "hidden_channels":64, 
-            "sparsity":0.,
+            "sparsity": 0.,
             "self_loops":0.,
             "undirected":False, 
             "patience":100,

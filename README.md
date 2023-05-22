@@ -3,6 +3,7 @@
 + [Fractional heat and Schrödinger equations](#fractional-heat-and-schrödinger-equations)
 + [Experiments](#experiments)
     - [How to run the code](#how-to-run-the-code)
+    - [Caveat](#caveat)
     - [Summary of the results](#summary-of-the-results)
 + [Cite Us](#cite-us)
 
@@ -26,6 +27,7 @@ Real-world graphs are not purely homophilic (bottom right) nor purely heterophil
 
 
 # Experiments
+
 ## How to run the code
 Clone the repository:
 ```
@@ -40,17 +42,24 @@ To run the experiments, for example, on `chameleon`, type:
 ```
 python main.py --dataset chameleon
 ```
-If you want to use the best hyperparams we found, you can use the flag `-b`: this will overwrite the default values with the values saved in `lib.best`. You can specify your own configuration via command line. For a complete list of all arguments and their explanation, type:
+If you want to use the best hyperparams we found, you can use the flag `-b`: this will overwrite the default values with the values saved in `lib.best`. To see which argument will be overwritten, please check the dataset in `lib.best`. 
+```
+python main.py --dataset chameleon -b
+```
+
+You can specify your own configuration via command line. For a complete list of all arguments and their explanation, type:
 ```
 python main.py -h
 ```
+
+## Caveat
+When loading the dataset, we use the `pre_transform` argument. This allows to compute the SVD as a preprocessing step. Normally, if the code executes without any issues, it automatically deletes the processed files at the end. However, in the event of an interruption, the processed graph might not be deleted. In such cases, please ensure to manually remove it to avoid potential overwrites or unexpected results.
 ## Summary of the results
 The test accuracy of our method on real-world graphs is shown below. In the paper, one can find a comparison with other models.
 |               | film | squirrel | chameleon | Citeseer | Pubmed | Cora|
 | :---------------- | :---------: | :---------: | :---------: | :---------: | :---------: | :---------: |
 | Undirected | 37.16 ± 1.42 | 64.23 ± 1.84 | 73.60 ± 1.55 | 78.07 ± 1.62 | 89.02 ± 0.38 |86.44 ± 1.17 |
 | Directed   | 37.41 ± 1.06 | 74.03 ± 1.58 | 77.98 ± 1.05 | - | - | - |
-
 
 
 In order to give a rough idea of the computational time, we report the time needed to compute the SVD and the training time. The GPU is a `NVIDIA TITANRTX` with `24 GB` of memory. Note that we considered the undirected graphs. Moreover, for Pubmed we computed only 30% of the singular values due to memory (and time) limitations.
