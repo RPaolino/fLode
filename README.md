@@ -69,5 +69,15 @@ In order to give a rough idea of the computational time, we report the time need
 | SVD [mm:ss] |   02:55   | 01:30 | 00:03 | 00:03 | 07:46 | 00:04 |
 | Training [iters/sec] | 5 | 4 | 10 | 8 | 4 | 15|
 # Cite Us
-If you find this work interesting, please cite us.
+If you find this work interesting, please cite us
+```
+@misc{maskey2023fractional,
+      title={A Fractional Graph Laplacian Approach to Oversmoothing}, 
+      author={Sohir Maskey and Raffaele Paolino and Aras Bacho and Gitta Kutyniok},
+      year={2023},
+      eprint={2305.13084},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG}
+}
+```
 
