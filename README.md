@@ -1,4 +1,5 @@
-# fLode: <ins>f</ins>ractional <ins>L</ins>aplacian graph neural <ins>ode</ins>
+# A Fractional Graph Laplacian Approach to Oversmoothing
+[![arXiv](https://img.shields.io/badge/arXiv-cs-blueviolet.svg)](https://arxiv.org/abs/2305.13084)
 + [Introduction](#introduction)
 + [Fractional heat and Schrödinger equations](#fractional-heat-and-schrödinger-equations)
 + [Experiments](#experiments)
