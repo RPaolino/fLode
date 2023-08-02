@@ -4,3 +4,5 @@
 .tmp
 test
 .results
+imgs/test*
+imgs/gif*

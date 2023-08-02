@@ -1,6 +1,9 @@
 import numpy as np
 import torch
+from torch.nn import ModuleDict
 import torch.nn.init as I
+from torch_geometric.nn import global_mean_pool, global_add_pool
+
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -14,38 +17,40 @@ def compute_num_params(model):
     if value.requires_grad:
       num_params +=value.numel()
   return num_params
-   
+  
 class fLode(torch.nn.Module):
     r'''
-    Create a Fractional Laplacian Graph Neural ODE.
     '''
     def __init__(
       self, 
       in_channels: int, 
       hidden_channels: int, 
       out_channels: int, 
-      num_layers: int, 
+      num_layers: int,
       dtype=torch.cfloat, 
       eq: str="-s",
       spectral_shift=0., 
       exponent="learnable", 
-      step_size="learnable", 
+      step_size="learnable",   
       channel_mixing="d", 
       input_dropout: float=0, 
       decoder_dropout: float=0, 
       init: str="normal", 
       encoder_layers: int = 1,
       decoder_layers: int = 2,
-      gcn: bool=False
+      gcn: bool=False,
+      no_sharing=False,
     ):
         super().__init__()
         
+        self.no_sharing=no_sharing
         self.in_channels = in_channels
         self.hidden_channels = hidden_channels
         self.out_channels = out_channels
         self.num_layers = num_layers
         self.encoder_layers = encoder_layers
         self.decoder_layers = decoder_layers
+        
         self.dtype = dtype
         self.eq = eq
         self.gcn=gcn
@@ -60,7 +65,7 @@ class fLode(torch.nn.Module):
         
         if exponent=="learnable":
           self.exponent = torch.nn.Parameter(
-            torch.ones(1, device=device)
+            torch.ones(num_layers if no_sharing else 1, device=device)
           )
         else:
           self.exponent = torch.tensor(exponent, device=device)
@@ -74,19 +79,18 @@ class fLode(torch.nn.Module):
           
         if step_size=="learnable":
           self.step_size = torch.nn.Parameter(
-            torch.ones(1, device=device, dtype=self.dtype)
+            torch.ones(num_layers if no_sharing else 1, device=device, dtype=self.dtype)
           )
         else:
-          self.step_size = torch.ones(1, device=device, dtype=self.dtype)*step_size
+          self.step_size = torch.ones(num_layers if no_sharing else 1, device=device, dtype=self.dtype)*step_size
           
         assert channel_mixing in ["d", "s", "f"], f'Channel mixing {channel_mixing} not implemented.'
         self.channel_mixing = channel_mixing
         self.W = torch.nn.Parameter(
-          torch.zeros((hidden_channels, hidden_channels), device=device, dtype=self.dtype)
+          torch.zeros((num_layers if no_sharing else 1, hidden_channels, hidden_channels), device=device, dtype=self.dtype)
         )
-        
         self.dropout=[Dropout(p=d) for d in [input_dropout, decoder_dropout]]
-                
+                      
         self.encoder = MLP(
           in_channels = self.in_channels, 
           hidden_channels = self.hidden_channels, 
@@ -141,7 +145,7 @@ class fLode(torch.nn.Module):
             if param.bias is not None:
               I.uniform_(param.bias, -bound, bound)
     
-    def parametrize_channel_mixing(self):
+    def parametrize_channel_mixing(self, W):
       r'''
       Useful to parametrize the "channel_mixing" matrix as
       - "d" diagonal matrix,
@@ -149,31 +153,33 @@ class fLode(torch.nn.Module):
       - "f" full matrix.
       '''
       if self.channel_mixing=="d":
-        return (self.W.diag().diag())
+        return (W.diag().diag())
       elif self.channel_mixing=="s":
-        return (self.W+self.W.transpose(0, 1))
+        return (W+W.transpose(0, 1))
       elif self.channel_mixing=="f":
-        return (self.W)
+        return (W)
       
-    def LxW(self, U, S, Vh, x):
+    def LxW(self, U, S, Vh, x, W, exponent):
       r'''
       Compute the right-hand side of the equation.
       '''
-      new_S = (self.spectral_shift+S).unsqueeze(dim=1).pow(self.exponent)
-      return U @ ((new_S * (Vh @ x)) @ self.parametrize_channel_mixing())
+      #new_S = DifferentiableSum.apply(S, self.M, self.N).unsqueeze(dim=1)
+      new_S = (self.spectral_shift + S).pow(exponent).unsqueeze(dim=1)
+      LxW = U @ ((new_S * (Vh @ x)) @ self.parametrize_channel_mixing(W))
+      return LxW
      
-    def forward_euler_step(self, U, S, Vh, x): 
+    def forward_euler_step(self, U, S, Vh, x, W, exponent, step_size): 
       r'''
       Compute the forward euler step x[t+1] = x[t] + h \iu L^\alpha x[t] W.
       '''
-      x = x + self.iu * self.step_size * self.LxW(U=U, S=S, Vh=Vh, x=x)
+      x = x + self.iu * step_size * self.LxW(U=U, S=S, Vh=Vh, x=x, W=W, exponent=exponent)
       return x
 
-    def gcn_step(self, U, S, Vh, x):
+    def gcn_step(self, U, S, Vh, x, W, exponent):
       r'''
       Compute the update step x[t+1] = = \iu L^\alpha x[t] W, i.e., a normal gcn step with the fractional Laplacian
       '''
-      x = self.iu * self.LxW(U=U, S=S, Vh=Vh, x=x)
+      x = self.iu * self.LxW(U=U, S=S, Vh=Vh, x=x, W=W, exponent=exponent)
       return x
 
     def dirichlet_energy(self, snl, x): 
@@ -190,6 +196,7 @@ class fLode(torch.nn.Module):
     
      
     def forward(self, data):
+      
       x=data.x.to(self.dtype)
       U, S, Vh = data.U.to(self.dtype), data.S, data.Vh.to(self.dtype)
       snl=data.snl.to(self.dtype)
@@ -210,22 +217,28 @@ class fLode(torch.nn.Module):
             U=U,
             S=S,
             Vh=Vh, 
-            x=x
+            x=x,
+            W=self.W[nl-1] if self.no_sharing else self.W[0],
+            exponent = self.exponent[nl-1] if self.no_sharing else self.exponent
           )
         else:
           x = self.forward_euler_step(
             U=U,
             S=S,
             Vh=Vh, 
-            x=x
+            x=x,
+            W=self.W[nl-1] if self.no_sharing else self.W[0],
+            exponent = self.exponent[nl-1] if self.no_sharing else self.exponent,
+            step_size = self.step_size[nl-1] if self.no_sharing else self.step_size
           )
         energy[nl] = self.dirichlet_energy(
           snl=snl,
           x=x
         )
-        
+
       x = self.dropout[1](x)
       x = self.decoder(x)
+      
       if self.dtype is torch.cfloat:
         x = x.abs()
       return x, energy
