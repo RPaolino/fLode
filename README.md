@@ -18,14 +18,14 @@ Let $\mathcal{G}=(\mathcal{V}, \mathcal{E})$ be a graph with vertices $\mathcal{
 
 #  Dirichlet Energy and Laplacian for (Directed) Graphs
 We define the ``Dirichlet Energy`` for directed graphs as 
-$$
+$
 \mathfrak{E}(\mathbf{x})\coloneqq \dfrac{1}{4}\sum\limits_{i, j=1}^N a_{i,j}\left\lVert \dfrac{\mathbf{x}_i}{\sqrt{d_i^{\text{in}}}} - \dfrac{\mathbf{x}_j}{\sqrt{\smash[b]{d_j^{\text{out}}}}} \right\rVert\, .
-$$
+$
 
-We define the ``symmetrically normalized Laplacian`` (SNA) as 
-$$
+We define the ``symmetrically normalized adjacency`` (SNA) as 
+$
 \mathbf{L}\coloneqq \mathbf{D}_1^{-\frac{1}{2}} \mathbf{A} \mathbf{D}_0^{-\frac{1}{2}}\, .
-$$ 
+$
 
 In the paper, we show theoretically that both definitions are extension of the usual definitions for the undirected case. More specifically,
 - the spectrum of the SNA lies in the unit circle, i.e., $\lvert\lambda(\mathbf{L})\rvert \leq 1$;
