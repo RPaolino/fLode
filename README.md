@@ -32,9 +32,7 @@ Unlike the undirected case, $1$ is not necessarily an eigenvalue of $\mathbf{L}$
 # Fractional Graph Laplacian
 
 We define the $\alpha$-fractional Laplacian $\mathbf{L}^\alpha$ using singular value calculus. If $\mathbf{L}=\mathbf{U}^\text{H}\mathbf{\Sigma}\mathbf{V}$ is the singular value decomposition of $\mathbf{L}$, then
-$$
-\mathbf{L}^\alpha \coloneqq \mathbf{U}^\text{H}\mathbf{\Sigma}^{\alpha}\mathbf{V}
-$$
+$$\mathbf{L}^\alpha\coloneqq\mathbf{U}^\text{H}\mathbf{\Sigma}^{\alpha}\mathbf{V}.$$
 The key insight is that singular values are always positive; hence, their fractional powers are always well-defined. Moreover, the SVD is more stable and accurate than the Jordan decomposition, which would be required with the usual definition in the singular-value domain.
 
 
