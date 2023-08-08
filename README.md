@@ -23,11 +23,11 @@ $$\mathfrak{E}(\mathbf{x})\coloneqq \dfrac{1}{4}\sum\limits_{i, j=1}^N a_{i,j}\l
 We define the ``symmetrically normalized adjacency`` (SNA) as 
 $$\mathbf{L}\coloneqq \mathbf{D}_1^{-\frac{1}{2}} \mathbf{A} \mathbf{D}_0^{-\frac{1}{2}}.$$
 
-In the paper, we show theoretically that both definitions are extension of the usual definitions for the undirected case. More specifically,
+In the paper, we show theoretically that both definitions are extensions of the usual definitions for the undirected case. More specifically,
 - the spectrum of the SNA lies in the unit circle, i.e., $\lvert\lambda(\mathbf{L})\rvert \leq 1$;
-- the Dirichlet Energy and the SNA are related by $\mathfrak{E}(\mathbf{x})=\frac{1}{2}\Re\left(\mathrm{trace}\left(\mathbf{x}^\text{H}\, (\mathbf{I}-\mathbf{L})\, \mathbf{x}\right)\right)$
+- the Dirichlet Energy and the SNA are related by $\mathfrak{E}(\mathbf{x})=\frac{1}{2}\Re\left(\mathrm{trace}\left(\mathbf{x}^\text{H} (\mathbf{I}-\mathbf{L}) \mathbf{x}\right)\right)$
 
-Differently from the undirected case, $1$ is not necessarily an eigenvalue of $\mathbf{L}$; hence, the minimum of $\mathfrak{E}$ is not necessarily $0$. In the paper, we give a full characterization of the cases in which $1\in\lambda(\mathbf{L})$.
+Unlike the undirected case, $1$ is not necessarily an eigenvalue of $\mathbf{L}$; hence, the minimum of $\mathfrak{E}$ is not necessarily $0$. In the paper, we give a full characterization of the cases in which $1\in\lambda(\mathbf{L})$.
 
 # Fractional Graph Laplacian
 
@@ -35,10 +35,10 @@ We define the $\alpha$-fractional Laplacian $\mathbf{L}^\alpha$ using singular v
 $$
 \mathbf{L}^\alpha \coloneqq \mathbf{U}^\text{H}\mathbf{\Sigma}^{\alpha}\mathbf{V}
 $$
-The key insight is that singular values are always positive, hence, their fractional powers are always well-defined. Moreover, the SVD is more stable and accurate than the Jordan decomposition, which would be required with the usual definition in the singular-value domain.
+The key insight is that singular values are always positive; hence, their fractional powers are always well-defined. Moreover, the SVD is more stable and accurate than the Jordan decomposition, which would be required with the usual definition in the singular-value domain.
 
 
-In the paper, we prove that the $\alpha$-fractional Laplacian is able to generate virtual edges among far-distant nodes. Intuitively, this is very useful for heterophilic graphs, i.e., when nodes are more likely to be connected to nodes belonging to a different class.
+In the paper, we prove that the $\alpha$-fractional Laplacian can generate virtual edges among far-distant nodes. Intuitively, this is very useful for heterophilic graphs, i.e., when nodes are more likely to be connected to nodes belonging to a different class.
 
 <img style="float: center;" src="imgs/fL.gif"/>
 
@@ -96,8 +96,8 @@ python node_classification.py -h
 ```
 
 ## Caveat
-When loading the dataset, we use the `pre_transform` argument. This allows to compute the SVD as a preprocessing step. Normally, if the code executes without any issues, it automatically deletes the processed files at the end. However, in the event of an interruption, the processed graph might not be deleted. In such cases, please ensure to manually remove it to avoid potential overwrites or unexpected results.
-
+- When loading the dataset, we use the `pre_transform` argument. This allows to compute the SVD as a preprocessing step. Normally, if the code executes without any issues, it automatically deletes the processed files at the end. However, in the event of an interruption, the processed graph might not be deleted. In such cases, please ensure to manually remove it to avoid potential overwrites or unexpected results.
+- The ``--real`` flag must be used in conjunction with ``--equation h`` or ``--equation mh``.
 # Cite Us
 If you find this work interesting, please cite us
 ```
