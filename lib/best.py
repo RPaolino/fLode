@@ -169,12 +169,15 @@ best_hyperparams = {
         "num_layers":4,
         "decoder_layers":2,
         "encoder_layers":2,
-        "hidden_channels":128, 
+        "hidden_channels":512, 
         "sparsity":0.,
         "sklearn": False,
+        "self_loops":1.,
+        "undirected":True, 
         "patience":100,
         "learning_rate":1e-3,
         "weight_decay":0.,
+        "normalize_features": False,
         "layer_norm": True
     },
     'Tolokers': {
@@ -184,9 +187,12 @@ best_hyperparams = {
         "hidden_channels":512, 
         "sparsity":0.,
         "sklearn": False,
+        "self_loops":1.,
+        "undirected":True, 
         "patience":100,
         "learning_rate":1e-3,
         "weight_decay":0.,
+        "normalize_features": False,
         "layer_norm": True
     },
     'Roman-empire': {
@@ -196,6 +202,8 @@ best_hyperparams = {
         "hidden_channels":512, 
         "sparsity":0.7,
         "sklearn": False,
+        "self_loops":1.,
+        "undirected":True, 
         "patience":100,
         "learning_rate":1e-3,
         "weight_decay":0.,
