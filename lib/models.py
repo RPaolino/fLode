@@ -1,10 +1,7 @@
 import numpy as np
 import torch
-from torch.nn import ModuleDict
 import torch.nn.init as I
-from torch_geometric.nn import global_mean_pool, global_add_pool
-
-
+import torch.nn.functional as F
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -28,7 +25,7 @@ class fLode(torch.nn.Module):
       out_channels: int, 
       num_layers: int,
       dtype=torch.cfloat, 
-      eq: str="-s",
+      eq: str="ms",
       spectral_shift=0., 
       exponent="learnable", 
       step_size="learnable",   
@@ -40,6 +37,7 @@ class fLode(torch.nn.Module):
       decoder_layers: int = 2,
       gcn: bool=False,
       no_sharing=False,
+      layer_norm=False
     ):
         super().__init__()
         
@@ -50,17 +48,17 @@ class fLode(torch.nn.Module):
         self.num_layers = num_layers
         self.encoder_layers = encoder_layers
         self.decoder_layers = decoder_layers
-        
+        self.layer_norm = layer_norm
         self.dtype = dtype
         self.eq = eq
         self.gcn=gcn
         if self.eq=="h":
           self.iu = torch.ones(1, device=device)
-        elif self.eq=="-h":
+        elif self.eq=="mh":
           self.iu = -torch.ones(1, device=device)
         elif self.eq=="s":
           self.iu = torch.complex(torch.zeros(1, device=device), torch.ones(1, device=device))
-        elif self.eq=="-s":
+        elif self.eq=="ms":
           self.iu = torch.complex(torch.zeros(1, device=device), -torch.ones(1, device=device))
         
         if exponent=="learnable":
@@ -125,8 +123,8 @@ class fLode(torch.nn.Module):
       while the other linear layers as default, i.e., using kaiming_uniform from torch.nn.init.
       '''
       if self.dtype is torch.cfloat:
-        getattr(torch.nn.init, self.init)(self.W.real)
-        getattr(torch.nn.init, self.init)(self.W.imag)
+        getattr(I, self.init)(self.W.real)
+        getattr(I, self.init)(self.W.imag)
       else:
         getattr(torch.nn.init, self.init)(self.W)
       #Default behaviour for other linear layers
@@ -235,6 +233,8 @@ class fLode(torch.nn.Module):
           snl=snl,
           x=x
         )
+        if self.layer_norm and (nl != self.num_layers):
+          x = F.normalize(x, p=2, dim=1)
 
       x = self.dropout[1](x)
       x = self.decoder(x)

@@ -1,7 +1,8 @@
+import torch
+from torch_geometric.datasets import Planetoid, WikipediaNetwork, Actor, HeterophilousGraphDataset
+
 from lib.transforms import *
 from lib.utils import *
-import torch
-from torch_geometric.datasets import Planetoid, WikipediaNetwork, Actor
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -16,10 +17,16 @@ def build_dataset(dataset_name, transform, verbose=False):
     '''
     if dataset_name in ["Cora", "Citeseer", "Pubmed"]:
         dataset = Planetoid(root='.data', split="geom-gcn", name=dataset_name, pre_transform=transform)
+        metric_name = "acc"
     elif dataset_name == "film":
         dataset =  Actor(root='.data/film/geom-gcn', pre_transform=transform)
+        metric_name = "acc"
     elif dataset_name in ["chameleon", "squirrel", "crocodile"]:
         dataset =  WikipediaNetwork(root='.data', name=dataset_name, pre_transform=transform)
+        metric_name = "acc"
+    elif dataset_name in ["Roman-empire", "Minesweeper", "Tolokers"]:
+        dataset =  HeterophilousGraphDataset(root='.data', name=dataset_name, pre_transform=transform)
+        metric_name = "acc" if dataset_name=="Roman-empire" else "roc_auc"
     else:
         assert False, f'Dataset {dataset_name} not implemented!'
     data=dataset[0].to(device)
@@ -30,4 +37,4 @@ def build_dataset(dataset_name, transform, verbose=False):
         print(f'Data')
         print(f'| num. nodes {data.num_nodes}, isolated nodes: {data.has_isolated_nodes()}, self-loops: {data.has_self_loops()}, undirected: {data.is_undirected()}')
         print(f'| {data}')
-    return dataset, data
+    return dataset, data, metric_name

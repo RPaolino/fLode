@@ -6,8 +6,6 @@
 + [Fractional Graph ODE](#fractional-graph-ode)
 + [Experiments](#experiments)
     - [How to run the code](#how-to-run-the-code)
-    - [Caveat](#caveat)
-+ [Cite Us](#cite-us)
 
 # Introduction
 Let $\mathcal{G}=(\mathcal{V}, \mathcal{E})$ be a graph with vertices $\mathcal{V}$ and edges $\mathcal{E}$; let $N=\lvert \mathcal{V}\rvert$ be the number of nodes. Define:
@@ -69,6 +67,7 @@ In order to give a rough idea of the computational time, we report the time need
 | #Nodes  | 7,600  |  5,201 | 2,277|  3,327 | 18,717  | 2,708  |
 | SVD [mm:ss] |   02:55   | 01:30 | 00:03 | 00:03 | 07:46 | 00:04 |
 | Training [iters/sec] | 5 | 4 | 10 | 8 | 4 | 15|
+
 ## How to run the code
 Clone the repository:
 ```
@@ -91,21 +90,5 @@ python node_classification.py --dataset chameleon -b
 You can specify your own configuration via command line. For a complete list of all arguments and their explanation, type:
 ```
 python node_classification.py -h
-```
-
-## Caveat
-- When loading the dataset, we use the `pre_transform` argument. This allows to compute the SVD as a preprocessing step. Normally, if the code executes without any issues, it automatically deletes the processed files at the end. However, in the event of an interruption, the processed graph might not be deleted. In such cases, please ensure to manually remove it to avoid potential overwrites or unexpected results.
-- The ``--real`` flag must be used in conjunction with ``--equation h`` or ``--equation mh``.
-# Cite Us
-If you find this work interesting, please cite us
-```
-@misc{maskey2023fractional,
-      title={A Fractional Graph Laplacian Approach to Oversmoothing}, 
-      author={Sohir Maskey and Raffaele Paolino and Aras Bacho and Gitta Kutyniok},
-      year={2023},
-      eprint={2305.13084},
-      archivePrefix={arXiv},
-      primaryClass={cs.LG}
-}
 ```
 

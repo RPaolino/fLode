@@ -1,17 +1,17 @@
+import argparse
 import json
+import os
+import shutil
+import torch
+import tqdm
+from sklearn.metrics import roc_auc_score
+from sklearnex import patch_sklearn
+
 from lib.best import *
 from lib.transforms import *
 from lib.models import *
 from lib.utils import *
 from lib.dataset import *
-import os
-import shutil
-import torch
-
-import tqdm
-import argparse
-
-from sklearnex import patch_sklearn
 
 RESULTS_FOLDER = '.results'
 if not os.path.exists(RESULTS_FOLDER):
@@ -34,6 +34,7 @@ def evaluate(model, criterion, data, train_mask, val_mask, test_mask):
   metrics = {
     "loss":{},
     "acc":{},
+    "roc_auc":{},
     "dirichlet_energy": {"real": {},
                           "imag": {}},
     "dirichlet_energy_ratio": {"real": {},
@@ -49,11 +50,26 @@ def evaluate(model, criterion, data, train_mask, val_mask, test_mask):
   for split, mask in zip(["train", "val", "test"], [train_mask, val_mask, test_mask]):
     metrics["loss"][split] = criterion(out[mask], data.y[mask]).item()
     correct = (pred_class[mask] == data.y[mask])  # Check against ground-truth labels.
-    metrics["acc"][split] = int(correct.sum()) / int(mask.sum()) # Derive ratio of correct predictions.
+    metrics["acc"][split] = correct.sum() / mask.sum() # Derive ratio of correct predictions.
+    if data.y.max().item()==1:
+      metrics["roc_auc"][split] = roc_auc_score(
+        data.y[mask].cpu().numpy(), 
+        out.softmax(1)[mask, -1].cpu().numpy()
+      )
   return metrics
 
 
 def main(options):
+  #Delete processed file
+  print(f'Deleting preprocessed files')
+  if options["dataset"] in ["Cora", "Citeseer", "Pubmed"]:
+    shutil.rmtree(f'.data/{options["dataset"]}/geom-gcn/processed', ignore_errors=True)
+  elif options["dataset"] in ["squirrel", "chameleon"]:
+    shutil.rmtree(f'.data/{options["dataset"]}/geom_gcn/processed', ignore_errors=True)
+  elif options["dataset"] in ["Minesweeper", "Tolokers", "Roman-empire"]:
+    tmp = options["dataset"].lower().replace("-", "_")
+    shutil.rmtree(f'.data/{tmp}/processed', ignore_errors=True)
+    
   patch_sklearn()
   device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
   print(f'device: {colortext(device, "c")}.')
@@ -68,7 +84,7 @@ def main(options):
     sklearn=options["sklearn"],
     verbose=options["verbose"]  
   )
-  dataset, data = build_dataset(
+  dataset, data, metric_name = build_dataset(
     dataset_name=options["dataset"], 
     transform=transform,
     verbose=options["verbose"]
@@ -83,9 +99,13 @@ def main(options):
     "acc.train": np.zeros(num_splits),
     "acc.val": np.zeros(num_splits),
     "acc.test": np.zeros(num_splits),
+    "roc_auc.train": np.zeros(num_splits),
+    "roc_auc.val": np.zeros(num_splits),
+    "roc_auc.test": np.zeros(num_splits),
     "epoch": np.zeros(num_splits),
     "exponent": np.zeros((num_splits, options["num_layers"] if options["no_sharing"] else 1)),
-    "step_size": np.zeros((num_splits, options["num_layers"] if options["no_sharing"] else 1)),
+    "step_size.real": np.zeros((num_splits, options["num_layers"] if options["no_sharing"] else 1)),
+    "step_size.imag": np.zeros((num_splits, options["num_layers"] if options["no_sharing"] else 1)),
     "dirichlet_energy.real": np.zeros(num_splits),
     "dirichlet_energy.imag": np.zeros(num_splits),
     "dirichlet_energy_ratio.real": np.zeros(num_splits),
@@ -113,6 +133,7 @@ def main(options):
       decoder_layers=options["decoder_layers"],
       gcn=options["gcn"],
       no_sharing=options["no_sharing"],
+      layer_norm=options["layer_norm"]
     ).to(device)
     
     if options["verbose"]:
@@ -148,18 +169,27 @@ def main(options):
               test_mask=test_mask
             )
           )
-          if evaluation_metrics["acc.val"] > best["acc.val"][n]: 
+          if evaluation_metrics[f"{metric_name}.val"] > best[f"{metric_name}.val"][n]: 
             for k, v in evaluation_metrics.items():
               if k in best.keys():
                 best[k][n] = v
             best["exponent"][n] = model.exponent.cpu().numpy()
             best["epoch"][n] = epoch
-            best["step_size"][n] = model.step_size.cpu().numpy()
+            best["step_size.real"][n] = model.step_size.real.cpu().numpy()
+            if model.step_size.dtype == torch.cfloat:
+              best["step_size.imag"][n] = model.step_size.imag.cpu().numpy()
             early_stopping_counter = 0
           else: 
             early_stopping_counter += 1
         
-        description = f'Loss: {loss:.4f}, Accuracy (train, val, test): ({best["acc.train"][n]*100:.2f}%, {best["acc.val"][n]*100:.2f}%, {best["acc.test"][n]*100:.2f}%)'
+        description = (
+          f'Loss: {loss:.4f}, '
+          + metric_name 
+          + ' (train, val, test): ('
+          + "{:.4f}, ".format(best[metric_name+".train"][n])
+          + "{:.4f}, ".format(best[metric_name+".val"][n])
+          + "{:.4f})".format(best[metric_name+".test"][n])
+        )
         progress.set_description(description)
         
         if early_stopping_counter >= options["patience"]:
@@ -185,13 +215,6 @@ def main(options):
     filename += f'_undirected' if options["undirected"] else f'_directed'
   with open(filename+f'.json', 'w', encoding='utf-8') as f:
     json.dump({k: list(v) for k, v in avg_best.items()}, f, ensure_ascii=False, indent=4)
-  
-  #Delete processed file
-  print(f'Deleting preprocessed files')
-  try:
-    shutil.rmtree(f'.data/{options["dataset"]}/geom_gcn/processed')
-  except:
-    shutil.rmtree(f'.data/{options["dataset"]}/geom-gcn/processed')
     
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description='')
@@ -209,6 +232,7 @@ if __name__=="__main__":
     parser.add_argument('--sparsity', type=float, default=0.0, help='(1-sparsity)*num_nodes singular values will be computed and stored.') 
     parser.add_argument('--sklearn', dest="sklearn", action='store_true', help='Use the scikit-learn-intelex.extmath library to compute the svd. Useful when the graph is too large, i.e., when the torch.linalg.svd() would cause an out-of-memory error.') 
     # Model
+    parser.add_argument('--layer_norm', action="store_true", help="Apply layer normalization")
     parser.add_argument('--hidden_channels', type=int, default=64, help='Number of hidden channels (default 64).') 
     parser.add_argument('--num_layers', type=int, default=3, help='Number of layers (default 3).') 
     parser.add_argument('--exponent', type=float_or_learnable, default="learnable", help='Value of \alpha (float or "learnable", default "learnable").') 
@@ -218,7 +242,7 @@ if __name__=="__main__":
     parser.add_argument('--no_sharing', dest="no_sharing", action='store_true', help='If channel mixing matrix should be different for each layer.') 
     parser.add_argument('--init', type=str, default="normal", help='Which initialization to use for channel_mixing. Check the ones implemented in torch.nn.init. (default "normal")') 
     parser.add_argument('-r', '--real', dest="real", action='store_true', help='The dtype of learnable parameters will be real.') 
-    parser.add_argument('--equation', type=str, default="-s", help='Equation to solve: "h" for heat eq., "-h" for minus heat eq., "s" for Schroedinger eq., "-s" "s" for minus Schroedinger eq. (default "-s")') 
+    parser.add_argument('--equation', type=str, default="ms", choices=["ms", "s", "mh", "h"], help='Equation to solve: "h" for heat eq., "mh" for minus heat eq., "s" for Schroedinger eq., "ms" "s" for minus Schroedinger eq. (default "ms")') 
     parser.add_argument('--encoder_layers', type=int, default=1, help='Number of encoding layers before the neural ODE (default 1).') 
     parser.add_argument('--decoder_layers', type=int, default=1, help='Number of decoding layers after the neural ODE (default 1).') 
     parser.add_argument('--input_dropout', type=float, default=0.0, help='Dropout of the first encoding layer (default 0.).') 
@@ -251,5 +275,9 @@ if __name__=="__main__":
     if options["verbose"]:
       for k in sorted(options.keys()):
         print(f'| {k}: {options[k]}')
-        
+    
+    if options["real"] and (options["equation"] != options["equation"][0]+'h'):
+      print(f'Changing equation from {options["equation"]} to {options["equation"][0]+"h"}')
+      options["equation"] = options["equation"][0]+'h'
+    
     main(options)
