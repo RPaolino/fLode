@@ -24,9 +24,12 @@ def build_dataset(dataset_name, transform, verbose=False):
     elif dataset_name in ["chameleon", "squirrel", "crocodile"]:
         dataset =  WikipediaNetwork(root='.data', name=dataset_name, pre_transform=transform)
         metric_name = "acc"
-    elif dataset_name in ["Roman-empire", "Minesweeper", "Tolokers"]:
+    elif dataset_name in ["Roman-empire", "Minesweeper", "Tolokers", "Amazon-ratings", "Questions"]:
         dataset =  HeterophilousGraphDataset(root='.data', name=dataset_name, pre_transform=transform)
-        metric_name = "acc" if dataset_name=="Roman-empire" else "roc_auc"
+        if dataset_name in ["Questions", "Minesweeper", "Tolokers"]:
+            metric_name = "roc_auc"
+        else:
+            metric_name = "acc"
     else:
         assert False, f'Dataset {dataset_name} not implemented!'
     data=dataset[0].to(device)

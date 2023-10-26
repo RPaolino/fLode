@@ -1,17 +1,16 @@
-from lib.utils import *
 from scipy.sparse import coo_matrix
 import time
 import torch
 from torch_scatter import scatter_sum
 import torch_geometric.transforms as T
 from torch_geometric.utils import add_remaining_self_loops
-
 from torch_geometric.data.datapipes import functional_transform
-
 from sklearnex import patch_sklearn
-patch_sklearn()
 from sklearn.utils.extmath import randomized_svd
 
+from lib.utils import *
+
+patch_sklearn()
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def build_transform(normalize_features, norm_ord, norm_dim, undirected, self_loops, lcc, sparsity, sklearn, verbose=False):

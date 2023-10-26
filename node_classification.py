@@ -22,7 +22,6 @@ def training_step(model, optimizer, criterion, data, train_mask):
   model.train()
   optimizer.zero_grad()  
   out, dirichlet_energy = model(data)  # Perform a single forward pass.
-  #out = out-out.max(dim=1)[0].unsqueeze(dim=1)
   loss = criterion(out[train_mask], data.y[train_mask]) 
   loss.backward()   
   optimizer.step()  
@@ -66,7 +65,7 @@ def main(options):
     shutil.rmtree(f'.data/{options["dataset"]}/geom-gcn/processed', ignore_errors=True)
   elif options["dataset"] in ["squirrel", "chameleon"]:
     shutil.rmtree(f'.data/{options["dataset"]}/geom_gcn/processed', ignore_errors=True)
-  elif options["dataset"] in ["Minesweeper", "Tolokers", "Roman-empire"]:
+  elif options["dataset"] in ["Minesweeper", "Tolokers", "Roman-empire", "Amazon-ratings", "Questions"]:
     tmp = options["dataset"].lower().replace("-", "_")
     shutil.rmtree(f'.data/{tmp}/processed', ignore_errors=True)
     
@@ -276,6 +275,7 @@ if __name__=="__main__":
       for k in sorted(options.keys()):
         print(f'| {k}: {options[k]}')
     
+    # If real, then the equation must be "h" or "mh"
     if options["real"] and (options["equation"] != options["equation"][0]+'h'):
       print(f'Changing equation from {options["equation"]} to {options["equation"][0]+"h"}')
       options["equation"] = options["equation"][0]+'h'
