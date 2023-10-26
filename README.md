@@ -39,11 +39,9 @@ In the paper, we prove that the $\alpha$-fractional Laplacian can generate virtu
 
 
 # Fractional Graph ODE
-We consider the fractional Laplacian ode $\mathbf{x}'(t) = -i\mkern1mu\mathbf{L}^\alpha \mathbf{x}(t) \mathbf{W}$ with initial condition $\mathbf{x}(0)=\mathbf{x}_0$, where $\mathbf{x}_0$ are the node features and $\mathbf{W}$, $\alpha$ are the learnable parameters. We discretize it using an explicit Euler scheme, obtaining the update rule
-$$
-\mathbf{x}_{t+1} = \mathbf{x}_t-i\mkern1mu \, h\, \mathbf{L}^\alpha \mathbf{x}_t \mathbf{W}
-$$
-The use of the SNA and its SVD to define the fractional ODEs is justified by the fact that the discretization of $\mathbf{x}(t)' = \mathbf{L}\, \mathbf{x}(t)\, \mathbf{W}$ leads to GCN architecture with residual connections.
+We consider the fractional Laplacian ode $\mathbf{x}'(t) = -i\mkern1mu\mathbf{L}^\alpha \mathbf{x}(t) \mathbf{W}$ with initial condition $\mathbf{x}(0)=\mathbf{x}_{0}$, where $\mathbf{x}_{0}$ are the node features and $\mathbf{W}$, $\alpha$ are the learnable parameters. We discretize it using an explicit Euler scheme, obtaining the update rule
+$$\mathbf{x}_{t+1} = \mathbf{x}_t-i\mkern1mu h \mathbf{L}^\alpha \mathbf{x}_t \mathbf{W}$$
+The use of the SNA and its SVD to define the fractional ODEs is justified by the fact that the discretization of $\mathbf{x}(t)'=\mathbf{L}\mathbf{x}(t)\mathbf{W}$ leads to GCN architecture with residual connections.
 
 We theoretically show that by selecting a learnable $\alpha$, fLode is able to adapt the convergence speed of the graph's Dirichlet energy, making it well-suited for both directed and undirected graphs, and for a broad range of homophily levels.
 
