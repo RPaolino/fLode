@@ -10,9 +10,22 @@ def compute_num_params(model):
   Compute the number of learnable parameters of "model".
   '''
   num_params=0
-  for _, value in model.named_parameters():
+  for name, value in model.named_parameters():
     if value.requires_grad:
-      num_params +=value.numel()
+      # The channel mixing matrix has different number of learnable params
+      # depending on the parametrization
+      if name=="W":
+        if model.channel_mixing == "d":
+          for v in value:
+            num_params += v.diag().numel()
+        elif model.channel_mixing == "s":
+          for v in value:
+            tmp = v.diag().numel()
+            num_params += int(tmp * (tmp-1) /2)
+        elif model.channel_mixing == "f":
+          num_params += value.numel()
+      else:
+        num_params += value.numel()
   return num_params
   
 class fLode(torch.nn.Module):
