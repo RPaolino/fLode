@@ -1,18 +1,18 @@
 cff-version: 1.2.0
 message: "If you want to cite fLode, please cite the preferred-citation paper."
 authors:
-  - family-names: Maskey
-    given-names: Sohir
-  - family-names: Paolino
-    given-names: Raffaele
-  - family-names: Bacho
-    given-names: Aras
-  - family-names: Kutyniok
-    given-names: Gitta
+  - given-names: Sohir
+    family-names: Maskey
+    email: maskey@math.lmu.de
+  - given-names: Raffaele
+    family-names: Paolino
+    email: paolino@math.lmu.de
+  - given-names: Aras
+    family-names: Bacho
+  - given-names: Gitta
+    family-names: Kutyniok
 title: "A Fractional Graph Laplacian Approach to Oversmoothing"
-type: inproceedings
+type: conference-paper
 year: 2023
-conference:
-  name: "Neural Information Processing Systems (NeurIPS)"
-publisher:
-  name: "Proceedings of the Conference on Neural Information Processing Systems (NeurIPS)"
+conference: "Neural Information Processing Systems (NeurIPS)"
+publisher: "Proceedings of the Conference on Neural Information Processing Systems (NeurIPS)"
