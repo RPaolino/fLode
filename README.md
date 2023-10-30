@@ -1,5 +1,5 @@
-# A Fractional Graph Laplacian Approach to Oversmoothing
-[![arXiv](https://img.shields.io/badge/arXiv-cs-blueviolet.svg)](https://arxiv.org/abs/2305.13084)
+# A Fractional Graph Laplacian Approach to Oversmoothing <br>[![arXiv](https://img.shields.io/badge/arXiv-cs-blueviolet.svg)](https://arxiv.org/abs/2305.13084)
+
 + [Introduction](#introduction)
 + [Dirichlet Energy and Laplacian for (Directed) Graphs](#dirichlet-energy-and-laplacian-for-directed-graphs)
 + [Fractional Graph Laplacian](#fractional-graph-laplacian)
@@ -75,18 +75,18 @@ python node_classification.py -h
 ```
 
 
-An overview of the results is shown below. In the paper, one can find a comparison with other models. Note that for "Minesweeper" and "Tolokers" the evaluation metric is AUC-ROC, while for the other datasets the evaluation metric is accuracy.
-|               | film | squirrel | chameleon | Citeseer | Pubmed | Cora|Minesweeper| Tolokers | Roman-empire |
-| :---------------- | :---------: | :---------: | :---------: | :---------: | :---------: | :---------: | :---------: | :---------: | :---------: |
-| Undirected | 37.16 ± 1.42 | 64.23 ± 1.84 | 73.60 ± 1.55 | 78.07 ± 1.62 | 89.02 ± 0.38 |86.44 ± 1.17 |92.35 ± 0.51|  84.17 ± 0.58| 74.97 ± 0.53 |
-| Directed   | 37.41 ± 1.06 | 74.03 ± 1.58 | 77.98 ± 1.05 | - | - | - | - | - | - |
+An overview of the results is shown below. In the paper, one can find a comparison with other models. Note that for "Minesweeper", "Tolokers" and "Questions" the evaluation metric is AUC-ROC, while for the other datasets the evaluation metric is accuracy.
+|               | film | squirrel | chameleon | Citeseer | Pubmed | Cora|Minesweeper| Tolokers | Roman-empire | Questions |
+| :---------------- | :---------: | :---------: | :---------: | :---------: | :---------: | :---------: | :---------: | :---------: | :---------: | :----: |
+| Undirected | 37.16 ± 1.42 | 64.23 ± 1.84 | 73.60 ± 1.55 | 78.07 ± 1.62 | 89.02 ± 0.38 |86.44 ± 1.17 |92.43 ± 0.51|  84.17 ± 0.58| 74.97 ± 0.53 | 78.39 ± 1.22 |
+| Directed   | 37.41 ± 1.06 | 74.03 ± 1.58 | 77.98 ± 1.05 | - | - | - | - | - | - | - |
 
 
-In order to give a rough idea of the computational time, we report some statistics. The GPU is a `NVIDIA TITANRTX` with `24 GB` of memory. Moreover, for Pubmed and Roman-empire we compute only 30% of the singular values due to memory (and time) limitations.
-|               | film | squirrel | chameleon | Citeseer | Pubmed | Cora| Minesweeper| Tolokers | Roman-empire |
-| :---------------- | :---------: | :---------: | :---------: | :---------: | :---------: | :---------: | :---------: | :---------: | :---------: |
-| #Nodes  | 7,600  |  5,201 | 2,277|  3,327 | 18,717  | 2,708  |  10,000 | 11,758 | 22,662 |
-| #Edges | 26,752  |  198,493| 31,421  | 4,676 | 44,327 | 5,278 |  39,402 | 519,000 | 32,927 |
-| SVD [mm:ss] |   02:55   | 01:30 | 00:03 | 00:03 | 07:46 | 00:04 | 04:22 | 12:53 | 10:26 |
-| Training [iters/sec] | 5 | 4 | 10 | 8 | 4 | 15| <1 | <1 | <1 |
+In order to give a rough idea of the computational time, we report some statistics. The GPU is a `NVIDIA TITANRTX` with `24 GB` of memory. Moreover, for Pubmed, Roman-empire and Questions we compute only 30% of the singular values due to memory (and time) limitations.
+|               | film | squirrel | chameleon | Citeseer | Pubmed | Cora| Minesweeper| Tolokers | Roman-empire | Questions |
+| :---------------- | :---------: | :---------: | :---------: | :---------: | :---------: | :---------: | :---------: | :---------: | :---------: | :---:|
+| #Nodes  | 7,600  |  5,201 | 2,277|  3,327 | 18,717  | 2,708  |  10,000 | 11,758 | 22,662 | 48,921 |
+| #Edges | 26,752  |  198,493| 31,421  | 4,676 | 44,327 | 5,278 |  39,402 | 519,000 | 32,927 | 153,540 |
+| SVD [mm:ss] |   02:55   | 01:30 | 00:03 | 00:03 | 07:46 | 00:04 | 04:22 | 12:53 | 10:26 | 26:15 |
+| Training [iters/sec] | 5 | 4 | 10 | 8 | 4 | 15| <1 | <1 | <1 | <1 |
 

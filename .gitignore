@@ -8,3 +8,4 @@ imgs/test*
 imgs/gif*
 slurm*
 *.sh
+*.out
