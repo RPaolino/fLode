@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-message: "If you want to cite fLode, please cite the preferred-citation paper."
+message: "If you want to cite fLode, please cite the paper."
 authors:
   - given-names: Sohir
     family-names: Maskey
@@ -12,7 +12,9 @@ authors:
   - given-names: Gitta
     family-names: Kutyniok
 title: "A Fractional Graph Laplacian Approach to Oversmoothing"
-type: conference-paper
+type: conference
 year: 2023
-conference: "Neural Information Processing Systems (NeurIPS)"
-publisher: "Proceedings of the Conference on Neural Information Processing Systems (NeurIPS)"
+conference: 
+  name: "Neural Information Processing Systems (NeurIPS)"
+publisher: 
+  name: "Proceedings of the Conference on Neural Information Processing Systems (NeurIPS)"
