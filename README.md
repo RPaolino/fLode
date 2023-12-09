@@ -1,4 +1,4 @@
-# A Fractional Graph Laplacian Approach to Oversmoothing <br>[![arXiv](https://img.shields.io/badge/arXiv-cs-blueviolet.svg)](https://arxiv.org/abs/2305.13084)
+# A Fractional Graph Laplacian Approach to Oversmoothing <br>[![arXiv](https://img.shields.io/badge/arXiv-2305.13084-aa142d.svg?logo=arxiv&style=plastic)](https://arxiv.org/abs/2305.13084)
 
 + [Introduction](#introduction)
 + [Dirichlet Energy and Laplacian for (Directed) Graphs](#dirichlet-energy-and-laplacian-for-directed-graphs)
